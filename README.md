@@ -1,2 +1,3 @@
-# CHEQUER 2022 Homework
-## CSV Query Language
+# CHEQUER Homework
+## 2022
+### CSV Query Language
