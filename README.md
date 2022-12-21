@@ -1,1 +1,2 @@
-"# CHEQUER 2022 Homework" 
+# CHEQUER 2022 Homework
+## CSV Query Language
