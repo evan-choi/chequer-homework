@@ -100,15 +100,16 @@ booleanValue
     ;
 
 function
-    : ROW                             #row
-    | CURRENT_DATE                    #currentDate
-    | CURRENT_TIME                    #currentTime
+    : ROW                                 #row
+    | COUNT '(' ('*' | qualifiedName) ')' #count
+    | CURRENT_DATE                        #currentDate
+    | CURRENT_TIME                        #currentTime
     | SUBSTRING '(' 
         src=valueExpression 
         ',' offset=valueExpression
         (',' length=valueExpression)?
-      ')'                             #substring
-    | CAST '(' expression AS type ')' #cast
+      ')'                                 #substring
+    | CAST '(' expression AS type ')'     #cast
     ;
 
 type
@@ -145,6 +146,7 @@ FALSE        : 'FALSE';
 
 // Functions
 ROW          : 'ROW';
+COUNT        : 'COUNT';
 CURRENT_DATE : 'CURRENT_DATE';
 CURRENT_TIME : 'CURRENT_TIME';
 SUBSTRING    : 'SUBSTRING';
