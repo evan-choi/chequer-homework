@@ -51,13 +51,13 @@ limitClause
 fileName
     : INTEGER
     | IDENTIFIER
-    | QUATED_DOUBLE
+    | QUOTED_DOUBLE
     | (INTEGER | IDENTIFIER | '/' | '\\' | '.' | ':')+
     ;
 
 identifier
     : IDENTIFIER
-    | QUATED_DOUBLE
+    | QUOTED_DOUBLE
     ;
 
 qualifiedName
@@ -131,53 +131,53 @@ MULTILINE_COMMENT
 
 // == Keywords ==
 
-SELECT            : S E L E C T;
-FROM              : F R O M;
-WHERE             : W H E R E;
-LIMIT             : L I M I T;
-AS                : A S;
-NOT               : N O T;
-AND               : A N D;
-OR                : O R;
-NULL              : N U L L;
-TRUE              : T R U E;
-FALSE             : F A L S E;
+SELECT       : 'SELECT';
+FROM         : 'FROM';
+WHERE        : 'WHERE';
+LIMIT        : 'LIMIT';
+AS           : 'AS';
+NOT          : 'NOT';
+AND          : 'AND';
+OR           : 'OR';
+NULL         : 'NULL';
+TRUE         : 'TRUE';
+FALSE        : 'FALSE';
 
 // Functions
-ROW               : R O W;
-CURRENT_DATE      : C U R R E N T '_' D A T E;
-CURRENT_TIME      : C U R R E N T '_' T I M E;
-SUBSTRING         : S U B S T R I N G;
-CAST              : C A S T;
+ROW          : 'ROW';
+CURRENT_DATE : 'CURRENT_DATE';
+CURRENT_TIME : 'CURRENT_TIME';
+SUBSTRING    : 'SUBSTRING';
+CAST         : 'CAST';
 
 // Predicates
-LIKE              : L I K E;
-ILIKE             : I L I K E;
+LIKE         : 'LIKE';
+ILIKE        : 'ILIKE';
 
 // Types
-TEXT              : T E X T;
-NUMBER            : N U M B E R;
-DATE              : D A T E;
-TIME              : T I M E;
-BOOLEAN           : B O O L E A N;
+TEXT         : 'TEXT';
+NUMBER       : 'NUMBER';
+DATE         : 'DATE';
+TIME         : 'TIME';
+BOOLEAN      : 'BOOLEAN';
 
 // Operators
-PLUS              : '+';
-MINUS             : '-';
-ASTERISK          : '*';
-SLASH             : '/';
-PERCENT           : '%';
-CONCAT            : '||';
-EQ                : '=';
-NEQ               : '<>' | '!=';
-LT                : '<';
-LTE               : '<=';
-GT                : '>';
-GTE               : '>=';
+PLUS         : '+';
+MINUS        : '-';
+ASTERISK     : '*';
+SLASH        : '/';
+PERCENT      : '%';
+CONCAT       : '||';
+EQ           : '=';
+NEQ          : '<>' | '!=';
+LT           : '<';
+LTE          : '<=';
+GT           : '>';
+GTE          : '>=';
 
 // == Literals ==
 
-QUATED_DOUBLE
+QUOTED_DOUBLE
     : '"' ( ~'"' | '""' )* '"'
     ;
 
@@ -194,33 +194,6 @@ IDENTIFIER
     ;
 
 // == Fragments ==
-
-fragment A: [aA];
-fragment B: [bB];
-fragment C: [cC];
-fragment D: [dD];
-fragment E: [eE];
-fragment F: [fF];
-fragment G: [gG];
-fragment H: [hH];
-fragment I: [iI];
-fragment J: [jJ];
-fragment K: [kK];
-fragment L: [lL];
-fragment M: [mM];
-fragment N: [nN];
-fragment O: [oO];
-fragment P: [pP];
-fragment Q: [qQ];
-fragment R: [rR];
-fragment S: [sS];
-fragment T: [tT];
-fragment U: [uU];
-fragment V: [vV];
-fragment W: [wW];
-fragment X: [xX];
-fragment Y: [yY];
-fragment Z: [zZ];
 
 fragment DIGIT: [0-9];
 fragment LETTER: [a-zA-Z\u0080-\uFFFF_];
