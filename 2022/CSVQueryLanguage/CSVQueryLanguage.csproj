@@ -2,6 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
+        <LangVersion>11</LangVersion>
+        <NoWarn>CS3021</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,6 +16,12 @@
 
     <ItemGroup>
         <Content Include="Parser\CqlBase.g4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Common" />
+      <Folder Include="Csv" />
+      <Folder Include="Operator" />
     </ItemGroup>
 
 </Project>

@@ -21,30 +21,30 @@ queryTerm
 
 querySpecification
     : SELECT items+=selectItem (',' items+=selectItem)*
-      (FROM from=dataSource)?
+      (FROM from=aliasedRelation)?
       (WHERE where=booleanExpression)?
     ;
 
 selectItem
-    : expression (AS alias=identifier)? #selectExpression
+    : expression (AS alias=identifier)? #selectSingle
     | identifier '.' '*'                #selectAll
     | '*'                               #selectAll
     ;
 
-dataSource
-    : dataSourcePrimary (AS alias=identifier)?
+aliasedRelation
+    : relationPrimary (AS alias=identifier)?
     ;
 
-dataSourcePrimary
-    : fileName                  #fileDataSource
-    | '(' query ')'             #subquery
-    | '(' dataSourcePrimary ')' #parenthesizedDataSource
+relationPrimary
+    : fileName                #csv
+    | '(' query ')'           #subquery
+    | '(' relationPrimary ')' #parenthesizedRelation
     ;
 
 limitClause
     : LIMIT (
-        offset=INTEGER ',' limit=INTEGER
-        | limit=INTEGER
+        offset=INTEGER ',' count=INTEGER
+        | count=INTEGER
     )
     ;
 
@@ -75,16 +75,16 @@ valueExpression
     | l=valueExpression op=('*' | '/' | '%') r=valueExpression  #arithmeticBinary
     | l=valueExpression op=('+' | '-') r=valueExpression        #arithmeticBinary
     | l=valueExpression CONCAT r=valueExpression                #concatenation
+    | '(' valueExpression ')'                                   #parenthesizedValueExpression
     ;
 
 primaryExpression
-    : NULL               #nullLiteral
-    | INTEGER            #numberLiteral
-    | STRING             #stringLiteral
-    | booleanValue       #booleanLiteral
-    | qualifiedName      #columnReference
-    | function           #functionCall
-    | '(' expression ')' #parenthesizedExpression
+    : NULL          #nullLiteral
+    | INTEGER       #numberLiteral
+    | STRING        #stringLiteral
+    | booleanValue  #booleanLiteral
+    | qualifiedName #columnReference
+    | function      #functionCall
     ;
 
 booleanExpression
@@ -92,6 +92,7 @@ booleanExpression
     | l=valueExpression op=(EQ | NEQ | LT | LTE | GT | GTE) r=valueExpression  #predicateComparison
     | NOT booleanExpression                                                    #logicalNot
     | l=booleanExpression op=(AND | OR) r=booleanExpression                    #logicalBinary
+    | '(' booleanExpression ')'                                                #parenthesizedBooleanExpression
     ;
 
 booleanValue
@@ -100,14 +101,14 @@ booleanValue
     ;
 
 function
-    : ROW                                 #row
+    : ROW_NUMBER ('(' ')')?               #rowNumber
     | COUNT '(' ('*' | qualifiedName) ')' #count
-    | CURRENT_DATE                        #currentDate
-    | CURRENT_TIME                        #currentTime
+    | CURRENT_DATE ('(' ')')?             #currentDate
+    | CURRENT_TIME ('(' ')')?             #currentTime
     | SUBSTRING '(' 
-        src=valueExpression 
-        ',' offset=valueExpression
-        (',' length=valueExpression)?
+        valueExpression 
+        ',' valueExpression
+        (',' valueExpression)?
       ')'                                 #substring
     | CAST '(' expression AS type ')'     #cast
     ;
@@ -145,11 +146,11 @@ TRUE         : 'TRUE';
 FALSE        : 'FALSE';
 
 // Functions
-ROW          : 'ROW';
+ROW_NUMBER   : 'ROW_NUMBER';
 COUNT        : 'COUNT';
 CURRENT_DATE : 'CURRENT_DATE';
 CURRENT_TIME : 'CURRENT_TIME';
-SUBSTRING    : 'SUBSTRING';
+SUBSTRING    : 'SUBSTRING' | 'SUBSTR';
 CAST         : 'CAST';
 
 // Predicates

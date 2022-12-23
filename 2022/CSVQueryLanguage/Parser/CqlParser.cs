@@ -2,12 +2,13 @@
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Misc;
+using CSVQueryLanguage.Parser.Tree;
 
 namespace CSVQueryLanguage.Parser;
 
 public sealed class CqlParser
 {
-    public void Parse(string sql)
+    public IStatement Parse(string sql)
     {
         var input = new UpperCaseCharStream(new ReadOnlyMemoryCharStream(sql.AsMemory()));
         var lexer = new CqlBaseLexer(input);
@@ -28,7 +29,7 @@ public sealed class CqlParser
             parser.Interpreter.PredictionMode = PredictionMode.Sll;
             root = parser.root();
         }
-        catch (ParseCanceledException e)
+        catch (ParseCanceledException)
         {
             tokenStream.Reset();
             parser.Reset();
@@ -37,6 +38,8 @@ public sealed class CqlParser
             root = parser.root();
         }
 
-        // TODO:
+        var node = new TreeBuilder().VisitRoot(root);
+
+        return (IStatement)node;
     }
 }
