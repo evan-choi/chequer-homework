@@ -6,24 +6,17 @@ public sealed class Analyzer
 {
     public AnalyzerScope AnalyzeStatement(IStatement statement)
     {
-        var context = new AnalyzerContext();
-        var visitor = new StatementVisitor(context);
+        var context = new AnalyzerContext(statement);
+        var scope = new AnalyzerScope(context);
 
-        return statement.Accept(visitor);
-    }
-
-    private sealed class StatementVisitor : DefaultNodeVisitor<AnalyzerScope>
-    {
-        private readonly AnalyzerContext _context;
-
-        public StatementVisitor(AnalyzerContext context)
+        switch (statement)
         {
-            _context = context;
+            case SelectStatement selectStatement:
+                var queryAnalyzer = new QueryAnalyzer();
+                queryAnalyzer.Analyze();
+                break;
         }
 
-        public override AnalyzerScope VisitSelectStatement(SelectStatement node)
-        {
-            return base.VisitSelectStatement(node);
-        }
+        return scope;
     }
 }

@@ -18,10 +18,4 @@
         <Content Include="Parser\CqlBase.g4" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Common" />
-      <Folder Include="Csv" />
-      <Folder Include="Operator" />
-    </ItemGroup>
-
 </Project>

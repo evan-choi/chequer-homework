@@ -263,7 +263,7 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
 
         var limit = (Limit)VisitLimitClause(context.limit);
 
-        return new Query(query.Select, query.AliasedRelation, query.Where, limit);
+        return new Query(query.Select, query.From, query.Where, limit);
     }
 
     public INode VisitQueryTerm(QueryTermContext context)

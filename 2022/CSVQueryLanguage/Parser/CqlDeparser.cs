@@ -271,10 +271,10 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
     {
         node.Select.Accept(this);
 
-        if (node.AliasedRelation is not null)
+        if (node.From is not null)
         {
             _builder.Append(' ');
-            node.AliasedRelation.Accept(this);
+            node.From.Accept(this);
         }
 
         if (node.Where is not null)

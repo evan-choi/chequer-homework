@@ -9,18 +9,18 @@ public sealed class Query : INode
 {
     public Select Select { get; }
 
-    public AliasedRelation AliasedRelation { get; }
+    public AliasedRelation From { get; }
 
     public IExpression Where { get; }
 
     public Limit Limit { get; }
 
-    public Query(Select select, AliasedRelation aliasedRelation, IExpression where, Limit limit)
+    public Query(Select select, AliasedRelation from, IExpression where, Limit limit)
     {
         ArgumentNullException.ThrowIfNull(select);
 
         Select = select;
-        AliasedRelation = aliasedRelation;
+        From = from;
         Where = where;
         Limit = limit;
     }

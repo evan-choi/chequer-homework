@@ -1,23 +1,22 @@
 namespace CSVQueryLanguage.Analysis;
 
-public sealed class AnalyzerScope
+internal sealed class AnalyzerScope
 {
+    public AnalyzerContext Context { get; }
+
     public AnalyzerScope Parent { get; }
 
-    public AnalyzerContext Context { get; }
+    public RelationInfo RelationInfo { get; }
 
     public AnalyzerScope(AnalyzerContext context)
     {
         Context = context;
     }
 
-    private AnalyzerScope(AnalyzerContext context, AnalyzerScope parent) : this(context)
+    public AnalyzerScope(AnalyzerContext context, AnalyzerScope parent, RelationInfo relationInfo)
     {
+        Context = context;
         Parent = parent;
-    }
-
-    public AnalyzerScope CreateChildScope()
-    {
-        return new AnalyzerScope(Context, this);
+        RelationInfo = relationInfo;
     }
 }

@@ -171,7 +171,7 @@ public abstract class DefaultNodeVisitor<TResult> : INodeVisitor<TResult>
         CurrentDepth++;
 
         node.Select.Accept(this);
-        node.AliasedRelation?.Accept(this);
+        node.From?.Accept(this);
         node.Where?.Accept(this);
         node.Limit?.Accept(this);
 
@@ -193,7 +193,9 @@ public abstract class DefaultNodeVisitor<TResult> : INodeVisitor<TResult>
     public virtual TResult VisitSelectStatement(SelectStatement node)
     {
         CurrentDepth++;
+
         node.Query.Accept(this);
+
         CurrentDepth--;
         return default;
     }
@@ -201,8 +203,10 @@ public abstract class DefaultNodeVisitor<TResult> : INodeVisitor<TResult>
     public virtual TResult VisitSingleColumn(SingleColumn node)
     {
         CurrentDepth++;
+
         node.Expression.Accept(this);
         node.Alias?.Accept(this);
+
         CurrentDepth--;
         return default;
     }
@@ -215,7 +219,9 @@ public abstract class DefaultNodeVisitor<TResult> : INodeVisitor<TResult>
     public virtual TResult VisitSubqueryRelation(SubqueryRelation node)
     {
         CurrentDepth++;
+
         node.Query.Accept(this);
+
         CurrentDepth--;
         return default;
     }
