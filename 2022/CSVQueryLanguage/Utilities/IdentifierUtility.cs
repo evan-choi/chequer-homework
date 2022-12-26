@@ -4,18 +4,18 @@ namespace CSVQueryLanguage.Utilities;
 
 public static class IdentifierUtility
 {
-    public static bool IsDoubleQuoted(string value)
+    public static bool IsDoubleQuoted(ReadOnlySpan<char> value)
     {
         return value is ['"', .., '"'];
     }
 
-    public static bool IsSingleQuoted(string value)
+    public static bool IsSingleQuoted(ReadOnlySpan<char> value)
     {
         return value is ['\'', .., '\''];
     }
 
     #region Unescape
-    public static string UnescapeDoubleQuotes(string value)
+    public static string UnescapeDoubleQuotes(ReadOnlySpan<char> value)
     {
         if (!IsDoubleQuoted(value))
             throw InvalidDoubleQuotedStringException(value);
@@ -57,31 +57,31 @@ public static class IdentifierUtility
         }
     }
 
-    private static bool TryUnescapeQuotesFast(string value, char quotes, out string unescapedValue)
+    private static bool TryUnescapeQuotesFast(ReadOnlySpan<char> value, char quotes, out string unescapedValue)
     {
         Span<char> buffer = stackalloc char[value.Length - 2];
         return TryUnescapeDoubleQuotesCore(buffer, value, quotes, out unescapedValue);
     }
 
-    private static bool TryUnescapeQuotesSlow(string value, char quotes, out string unescapedValue)
+    private static bool TryUnescapeQuotesSlow(ReadOnlySpan<char> value, char quotes, out string unescapedValue)
     {
         Span<char> buffer = new char[value.Length - 2];
         return TryUnescapeDoubleQuotesCore(buffer, value, quotes, out unescapedValue);
     }
 
-    private static bool TryUnescapeDoubleQuotesCore(Span<char> buffer, string value, char quotes, out string unescapedValue)
+    private static bool TryUnescapeDoubleQuotesCore(Span<char> buffer, ReadOnlySpan<char> value, char quotes, out string unescapedValue)
     {
         var bufferIndex = 0;
-        ReadOnlySpan<char> valueSpan = value.AsSpan(1, value.Length - 2);
+        value = value.Slice(1, value.Length - 2);
 
-        while (!valueSpan.IsEmpty)
+        while (!value.IsEmpty)
         {
-            var next = valueSpan.IndexOf(quotes);
+            var next = value.IndexOf(quotes);
 
             if (next == -1)
                 break;
 
-            if (next + 1 >= valueSpan.Length || valueSpan[next + 1] != quotes)
+            if (next + 1 >= value.Length || value[next + 1] != quotes)
             {
                 unescapedValue = default;
                 return false;
@@ -91,27 +91,27 @@ public static class IdentifierUtility
             //    ^ 3          ^ 4
             next++;
 
-            valueSpan[..next].CopyTo(buffer[bufferIndex..]);
+            value[..next].CopyTo(buffer[bufferIndex..]);
             bufferIndex += next;
-            valueSpan = valueSpan[(next + 1)..];
+            value = value[(next + 1)..];
         }
 
-        if (!valueSpan.IsEmpty)
+        if (!value.IsEmpty)
         {
-            valueSpan.CopyTo(buffer[bufferIndex..]);
-            bufferIndex += valueSpan.Length;
+            value.CopyTo(buffer[bufferIndex..]);
+            bufferIndex += value.Length;
         }
 
         unescapedValue = buffer[..bufferIndex].ToString();
         return true;
     }
 
-    private static ArgumentException InvalidDoubleQuotedStringException(string value)
+    private static ArgumentException InvalidDoubleQuotedStringException(ReadOnlySpan<char> value)
     {
         return new ArgumentException($"Invalid double quoted string {value}", nameof(value));
     }
 
-    private static ArgumentException InvalidSingleQuotedStringException(string value)
+    private static ArgumentException InvalidSingleQuotedStringException(ReadOnlySpan<char> value)
     {
         return new ArgumentException($"Invalid single quoted string {value}", nameof(value));
     }

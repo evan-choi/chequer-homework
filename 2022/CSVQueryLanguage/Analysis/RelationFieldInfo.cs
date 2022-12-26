@@ -1,18 +1,18 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using CSVQueryLanguage.Parser.Tree;
 
 namespace CSVQueryLanguage.Analysis;
 
 public sealed class RelationFieldInfo
 {
-    public INode Source { get; }
+    public IExpression Source { get; }
 
     public string Name { get; }
 
-    public RelationFieldInfo(INode source, string name)
+    public RelationFieldInfo(IExpression source, [AllowNull] string name)
     {
         ArgumentNullException.ThrowIfNull(source);
-        ArgumentException.ThrowIfNullOrEmpty(name);
 
         Source = source;
         Name = name;

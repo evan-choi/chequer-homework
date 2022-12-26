@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using CSVQueryLanguage.Parser.Tree;
 
 namespace CSVQueryLanguage.Analysis;
 
+[DebuggerDisplay("Source={Source}, Name={Name}")]
 public sealed class RelationInfo
 {
     public INode Source { get; }
