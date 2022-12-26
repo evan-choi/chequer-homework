@@ -20,9 +20,11 @@ internal sealed class QueryAnalyzer
         var outputRelation = new RelationInfo(query, null, outputFields);
 
         // TODO: query.Where
-        // TODO: query.Limit
 
-        return new QueryScope(context, scope, outputRelation);
+        scope = new QueryScope(context, scope, outputRelation);
+        context.Scopes[query] = scope;
+
+        return scope;
     }
 
     private QueryScope AnalyzeRelation(IRelation relation, AnalyzerContext context)

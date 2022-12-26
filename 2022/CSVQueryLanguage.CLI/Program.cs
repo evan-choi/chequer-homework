@@ -2,6 +2,8 @@
 using System.Linq;
 using CSVQueryLanguage.Analysis;
 using CSVQueryLanguage.Parser;
+using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Plan;
 using CSVQueryLanguage.Utilities;
 
 namespace CSVQueryLanguage.CLI;
@@ -29,6 +31,10 @@ internal static class Program
                 var scope = analyzer.AnalyzeStatement(statement);
                 Console.WriteLine(string.Join(", ", scope.RelationInfo.Fields.Select(x => x.Name)));
                 Console.WriteLine();
+
+                Console.WriteLine("==== Plan ====");
+                var planner = new Planner(scope.Context);
+                var plan = planner.PlanStatement(statement);
 
                 Console.WriteLine("==== Deparse ====");
                 Console.WriteLine(CqlDeparser.Deparse(statement));

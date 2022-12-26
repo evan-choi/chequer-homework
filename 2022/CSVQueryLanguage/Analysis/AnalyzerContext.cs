@@ -7,7 +7,7 @@ public sealed class AnalyzerContext
 {
     public IStatement Statement { get; }
 
-    public Dictionary<IRelation, QueryScope> Scopes { get; } = new();
+    public Dictionary<INode, QueryScope> Scopes { get; } = new();
 
     private Dictionary<IExpression, DataType> ExpressionTypes { get; } = new();
 
