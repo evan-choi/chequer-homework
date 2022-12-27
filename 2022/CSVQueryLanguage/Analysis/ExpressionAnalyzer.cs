@@ -161,6 +161,10 @@ file sealed class ExpressionRewriter : IExpressionVisitor<IExpression>
 
         switch (node.Name)
         {
+            case BuiltInFunctions.Concat:
+                type = DataType.Text;
+                break;
+
             // TODO: Add aggregate variable to QueryScope and rewrite to VariableReference
             case BuiltInFunctions.RowNumber:
             case BuiltInFunctions.Count:
