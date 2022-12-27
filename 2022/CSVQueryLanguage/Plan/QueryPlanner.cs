@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CSVQueryLanguage.Analysis;
-using CSVQueryLanguage.Parser.Tree;
 using CSVQueryLanguage.Plan.Nodes;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Plan;
 
@@ -18,19 +18,18 @@ public sealed class QueryPlanner
 
     public PlanNode PlanQuery(Query query)
     {
-        var scope = _context.Scopes[query];
-        var names = ResolveOutputColumnNames(scope.RelationInfo);
-
         PlanNode plan = null;
 
         if (query.From is not null)
             plan = PlanRelation(query.From);
 
-        plan = PlanWhere(query.Where, plan);
-        plan = PlanLimit(query.Limit, plan);
-        plan = PlanSelect(query.Select, plan);
+        var scope = _context.Scopes[query];
 
-        return new OutputNode(plan, names);
+        plan = PlanWhere(scope.Filter, plan);
+        plan = PlanLimit(query.Limit, plan);
+        plan = PlanSelect(query.Select, scope, plan);
+
+        return plan;
     }
 
     private PlanNode PlanWhere(IExpression where, PlanNode source)
@@ -38,21 +37,46 @@ public sealed class QueryPlanner
         if (where is null)
             return source;
 
-        var predicate = ExpressionRewriter.Rewrite(where);
+        return new FilterNode(source, where);
     }
 
     private PlanNode PlanLimit(Limit limit, PlanNode source)
     {
-        throw new NotImplementedException();
+        if (limit is null)
+            return source;
+
+        if (limit.Offset.HasValue)
+            source = new OffsetNode(source, limit.Offset.Value);
+
+        if (limit.Count.HasValue)
+            source = new LimitNode(source, limit.Count.Value);
+
+        return source;
     }
 
-    private PlanNode PlanSelect(Select select, PlanNode source)
+    private PlanNode PlanSelect(Select select, QueryScope scope, PlanNode source)
     {
+        if (select.Items is [AllColumns])
+            return source;
+
+        IExpression[] expressions = scope.RelationInfo.Fields
+            .Select(x => x.Source)
+            .ToArray();
+
+        DataType?[] dataTypes = scope.RelationInfo.Fields
+            .Select(x => x.Type)
+            .ToArray();
+
+        var names = scope.RelationInfo.Fields
+            .Select(x => x.Name)
+            .ToArray();
+
+        return new ProjectNode(source, expressions, dataTypes, names);
     }
 
     private PlanNode PlanRelation(IRelation relation)
     {
-        var plan = relation switch
+        return relation switch
         {
             AliasedRelation aliasedRelation => PlanAliasedRelation(aliasedRelation),
             CsvRelation csvRelation => PlanCsvRelation(csvRelation),
@@ -80,27 +104,5 @@ public sealed class QueryPlanner
     private PlanNode PlanSubqueryRelation(SubqueryRelation subqueryRelation)
     {
         return PlanQuery(subqueryRelation.Query);
-    }
-
-    private string[] ResolveOutputColumnNames(RelationInfo info)
-    {
-        var names = info.Fields
-            .Select(x => x.Name)
-            .ToArray();
-
-        int colIndex = 0;
-
-        for (int i = 0; i < names.Length; i++)
-        {
-            if (!string.IsNullOrEmpty(names[i]))
-                continue;
-
-            while (names.Contains($"_col{colIndex}"))
-                colIndex++;
-
-            names[i] = $"_col{colIndex++}";
-        }
-
-        return names;
     }
 }

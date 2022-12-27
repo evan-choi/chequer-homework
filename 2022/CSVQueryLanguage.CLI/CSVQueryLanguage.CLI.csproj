@@ -9,4 +9,10 @@
         <ProjectReference Include="..\CSVQueryLanguage\CSVQueryLanguage.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="actor.csv">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

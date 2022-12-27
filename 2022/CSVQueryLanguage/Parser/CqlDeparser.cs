@@ -1,7 +1,8 @@
 using System;
 using System.Linq;
 using System.Text;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Common;
+using CSVQueryLanguage.Tree;
 using CSVQueryLanguage.Utilities;
 
 namespace CSVQueryLanguage.Parser;
@@ -17,6 +18,67 @@ public static class CqlDeparser
 
         return builder.ToString();
     }
+
+    public static string Deparse(LogicalOperator op)
+    {
+        return op switch
+        {
+            LogicalOperator.And => "AND",
+            LogicalOperator.Or => "OR",
+            _ => throw new ArgumentOutOfRangeException(nameof(op), op, $"Unknown operator '{op}'")
+        };
+    }
+
+    public static string Deparse(ArithmeticOperator op)
+    {
+        return op switch
+        {
+            ArithmeticOperator.Add => "+",
+            ArithmeticOperator.Subtract => "-",
+            ArithmeticOperator.Multiply => "*",
+            ArithmeticOperator.Divide => "/",
+            ArithmeticOperator.Modulus => "%",
+            _ => throw new ArgumentOutOfRangeException(nameof(op), op, $"Unknown operator '{op}'")
+        };
+    }
+
+    public static string Deparse(ComparisonOperator op)
+    {
+        return op switch
+        {
+            ComparisonOperator.Equal => "=",
+            ComparisonOperator.NotEqual => "<>",
+            ComparisonOperator.LessThan => "<",
+            ComparisonOperator.LessThanOrEqual => "<=",
+            ComparisonOperator.GreaterThan => ">",
+            ComparisonOperator.GreaterThanOrEqual => ">=",
+            _ => throw new ArgumentOutOfRangeException(nameof(op), op, $"Unknown operator '{op}'")
+        };
+    }
+
+    public static string Deparse(ArithmeticSign sign)
+    {
+        return sign switch
+        {
+            ArithmeticSign.Plus => "+",
+            ArithmeticSign.Minus => "-",
+            _ => throw new ArgumentOutOfRangeException(nameof(sign), sign, $"Unknown sign '{sign}'")
+        };
+    }
+
+    public static string Deparse(DataType type)
+    {
+        return type switch
+        {
+            DataType.Text => "TEXT",
+            DataType.Number => "NUMBER",
+            DataType.Date => "DATE",
+            DataType.Time => "TIME",
+            DataType.Timestamp => "TIMESTAMP",
+            DataType.Boolean => "BOOLEAN",
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Unknown type '{type}'")
+        };
+    }
 }
 
 file readonly struct CqlDeparserVisitor : INodeVisitor<object>
@@ -26,6 +88,11 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
     public CqlDeparserVisitor(StringBuilder builder)
     {
         _builder = builder;
+    }
+
+    public object Visit(INode node)
+    {
+        return node.Accept(this);
     }
 
     public object VisitAliasedRelation(AliasedRelation node)
@@ -67,7 +134,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
             node.Left.Accept(this);
         }
 
-        _builder.Append(' ').Append(Deparse(node.Operator)).Append(' ');
+        _builder.Append(' ').Append(CqlDeparser.Deparse(node.Operator)).Append(' ');
 
         if (NeedParenthesis(node.Operator, node.Right))
         {
@@ -94,7 +161,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
 
     public object VisitArithmeticUnaryExpression(ArithmeticUnaryExpression node)
     {
-        _builder.Append(Deparse(node.Sign));
+        _builder.Append(CqlDeparser.Deparse(node.Sign));
         node.Value.Accept(this);
 
         return null;
@@ -117,7 +184,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
     public object VisitComparisonExpression(ComparisonExpression node)
     {
         node.Left.Accept(this);
-        _builder.Append(' ').Append(Deparse(node.Operator)).Append(' ');
+        _builder.Append(' ').Append(CqlDeparser.Deparse(node.Operator)).Append(' ');
         node.Right.Accept(this);
 
         return null;
@@ -132,7 +199,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
 
     public object VisitDataTypeExpression(DataTypeExpression node)
     {
-        _builder.Append(Deparse(node.Type));
+        _builder.Append(CqlDeparser.Deparse(node.Type));
 
         return null;
     }
@@ -141,23 +208,23 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
     {
         switch (node.Name)
         {
-            case CqlFunctions.Concat:
+            case BuiltInFunctions.Concat:
                 node.Arguments[0].Accept(this);
                 _builder.Append(" || ");
                 node.Arguments[1].Accept(this);
                 break;
 
-            case CqlFunctions.RowNumber:
-            case CqlFunctions.CurrentDate:
-            case CqlFunctions.CurrentTime:
+            case BuiltInFunctions.RowNumber:
+            case BuiltInFunctions.CurrentDate:
+            case BuiltInFunctions.CurrentTime:
                 _builder.Append(node.Name).Append("()");
                 break;
 
-            case CqlFunctions.Count:
+            case BuiltInFunctions.Count:
                 _builder.Append(node.Name).Append("(*)");
                 break;
 
-            case CqlFunctions.Substring:
+            case BuiltInFunctions.Substring:
                 _builder.Append(node.Name).Append('(');
 
                 for (int i = 0; i < node.Arguments.Length; i++)
@@ -171,7 +238,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
                 _builder.Append(')');
                 break;
 
-            case CqlFunctions.Cast:
+            case BuiltInFunctions.Cast:
                 _builder.Append(node.Name).Append('(');
                 node.Arguments[0].Accept(this);
                 _builder.Append(" AS ");
@@ -188,7 +255,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
 
     public object VisitFieldReference(FieldReference node)
     {
-        _builder.Append("__ref").Append(node.Index);
+        _builder.Append("__field$").Append(node.Index);
         return null;
     }
 
@@ -228,7 +295,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
         else
             node.Left.Accept(this);
 
-        _builder.Append(' ').Append(Deparse(node.Operator)).Append(' ');
+        _builder.Append(' ').Append(CqlDeparser.Deparse(node.Operator)).Append(' ');
 
         if (node.Right is ArithmeticBinaryExpression)
             AcceptWithParenthesis(node.Right);
@@ -327,7 +394,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
         return null;
     }
 
-    public object VisitStringLiteral(StringLiteral node)
+    public object VisitStringLiteral(TextLiteral node)
     {
         _builder.Append(IdentifierUtility.EscapeSingleQuotes(node.Value));
         return null;
@@ -340,6 +407,27 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
         return null;
     }
 
+    public object VisitVariableReference(VariableReference node)
+    {
+        _builder.Append("__val$").Append(node.Name);
+        return null;
+    }
+
+    public object VisitDateLiteral(DateLiteral node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public object VisitTimeLiteral(TimeLiteral node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public object VisitTimestampLiteral(TimestampLiteral node)
+    {
+        throw new NotImplementedException();
+    }
+
     private void AcceptWithParenthesis(INode node)
     {
         Parenthesize(this, x => node.Accept(x));
@@ -350,65 +438,5 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
         visitor._builder.Append('(');
         visit(visitor);
         visitor._builder.Append(')');
-    }
-
-    private static string Deparse(LogicalOperator op)
-    {
-        return op switch
-        {
-            LogicalOperator.And => "AND",
-            LogicalOperator.Or => "OR",
-            _ => throw new ArgumentOutOfRangeException(nameof(op), op, $"Unknown operator '{op}'")
-        };
-    }
-
-    private static string Deparse(ArithmeticOperator op)
-    {
-        return op switch
-        {
-            ArithmeticOperator.Add => "+",
-            ArithmeticOperator.Subtract => "-",
-            ArithmeticOperator.Multiply => "*",
-            ArithmeticOperator.Divide => "/",
-            ArithmeticOperator.Modulus => "%",
-            _ => throw new ArgumentOutOfRangeException(nameof(op), op, $"Unknown operator '{op}'")
-        };
-    }
-
-    private static string Deparse(ComparisonOperator op)
-    {
-        return op switch
-        {
-            ComparisonOperator.Equal => "=",
-            ComparisonOperator.NotEqual => "<>",
-            ComparisonOperator.LessThan => "<",
-            ComparisonOperator.LessThanOrEqual => "<=",
-            ComparisonOperator.GreaterThan => ">=",
-            ComparisonOperator.GreaterThanOrEqual => ">=",
-            _ => throw new ArgumentOutOfRangeException(nameof(op), op, $"Unknown operator '{op}'")
-        };
-    }
-
-    private static string Deparse(ArithmeticSign sign)
-    {
-        return sign switch
-        {
-            ArithmeticSign.Plus => "+",
-            ArithmeticSign.Minus => "-",
-            _ => throw new ArgumentOutOfRangeException(nameof(sign), sign, $"Unknown sign '{sign}'")
-        };
-    }
-
-    private static string Deparse(DataType type)
-    {
-        return type switch
-        {
-            DataType.Text => "TEXT",
-            DataType.Number => "NUMBER",
-            DataType.Date => "DATE",
-            DataType.Time => "TIME",
-            DataType.Boolean => "BOOLEAN",
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Unknown type '{type}'")
-        };
     }
 }

@@ -1,22 +1,19 @@
-using System.Collections.Generic;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Plan.Nodes;
 
 public sealed class ProjectNode : PlanNode
 {
-    public PlanNode Source { get; }
+    public IExpression[] Expressions { get; }
 
-    public IReadOnlyDictionary<string, IExpression> Columns { get; }
+    public DataType?[] DataTypes { get; }
 
-    public ProjectNode(PlanNode source, IDictionary<string, IExpression> columns)
+    public string[] Names { get; }
+
+    public ProjectNode(PlanNode source, IExpression[] expressions, DataType?[] dataTypes, string[] names) : base(source)
     {
-        Source = source;
-        Columns = columns.AsReadOnly();
-    }
-
-    protected override IEnumerable<PlanNode> GetChildren()
-    {
-        yield return Source;
+        Expressions = expressions;
+        DataTypes = dataTypes;
+        Names = names;
     }
 }

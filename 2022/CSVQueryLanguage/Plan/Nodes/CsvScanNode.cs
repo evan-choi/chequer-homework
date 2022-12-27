@@ -4,11 +4,11 @@ public sealed class CsvScanNode : PlanNode
 {
     public string FileName { get; }
 
-    public string[] Columns { get; }
+    public string[] ColumnNames { get; }
 
-    public CsvScanNode(string fileName, string[] columns)
+    public CsvScanNode(string fileName, string[] columnNames)
     {
         FileName = fileName;
-        Columns = columns;
+        ColumnNames = columnNames;
     }
 }

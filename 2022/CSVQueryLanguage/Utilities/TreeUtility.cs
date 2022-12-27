@@ -1,6 +1,6 @@
 ﻿using Antlr4.Runtime.Misc;
 using CSVQueryLanguage.Parser;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Utilities;
 

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Analysis;
 

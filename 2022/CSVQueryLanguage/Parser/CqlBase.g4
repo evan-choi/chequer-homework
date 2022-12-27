@@ -44,6 +44,7 @@ relationPrimary
 limitClause
     : LIMIT (
         offset=INTEGER ',' count=INTEGER
+        | offset=INTEGER ','
         | count=INTEGER
     )
     ;

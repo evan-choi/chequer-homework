@@ -1,5 +1,5 @@
 using System;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Analysis;
 
@@ -12,8 +12,8 @@ public sealed class Analyzer
         switch (statement)
         {
             case SelectStatement selectStatement:
-                var queryAnalyzer = new QueryAnalyzer();
-                return queryAnalyzer.AnalyzeQuery(selectStatement.Query, context);
+                var queryAnalyzer = new QueryAnalyzer(context);
+                return queryAnalyzer.AnalyzeQuery(selectStatement.Query);
         }
 
         throw new NotImplementedException();

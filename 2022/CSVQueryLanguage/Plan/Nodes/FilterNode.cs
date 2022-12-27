@@ -1,22 +1,13 @@
-using System.Collections.Generic;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Plan.Nodes;
 
 public sealed class FilterNode : PlanNode
 {
-    public PlanNode Source { get; }
-
     public IExpression Predicate { get; }
 
-    public FilterNode(PlanNode source, IExpression predicate)
+    public FilterNode(PlanNode source, IExpression predicate) : base(source)
     {
-        Source = source;
         Predicate = predicate;
-    }
-
-    protected override IEnumerable<PlanNode> GetChildren()
-    {
-        yield return Source;
     }
 }

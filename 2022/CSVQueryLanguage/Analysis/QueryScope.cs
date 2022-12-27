@@ -1,5 +1,7 @@
+using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Analysis;
 
@@ -11,23 +13,25 @@ public sealed class QueryScope
 
     public RelationInfo RelationInfo { get; }
 
-    public QueryScope(AnalyzerContext context)
-    {
-        Context = context;
-    }
+    public IExpression Filter { get; }
 
-    public QueryScope(AnalyzerContext context, QueryScope parent, RelationInfo relationInfo)
+    public QueryScope(
+        AnalyzerContext context,
+        [AllowNull] QueryScope parent,
+        RelationInfo relationInfo,
+        [AllowNull] IExpression filter)
     {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(relationInfo);
+
         Context = context;
         Parent = parent;
         RelationInfo = relationInfo;
+        Filter = filter;
     }
 
     public RelationFieldInfo ResolveField(QualifiedName name)
     {
-        if (RelationInfo is null)
-            throw new CqlException("No table");
-
         switch (name.Parts.Length)
         {
             case > 2:
@@ -37,14 +41,27 @@ public sealed class QueryScope
                 var target = name.Parts[0];
 
                 if (RelationInfo.Name != target.Value)
-                    throw new CqlException($"Table {target.OriginalValue} not found");
+                    throw CqlErrors.RelationNotFound(target.OriginalValue);
 
                 break;
         }
 
-        var columnName = name.Parts[^1].Value;
+        return ResolveField(name.Parts[^1].Value);
+    }
 
+    public RelationFieldInfo ResolveField(string columnName)
+    {
         return RelationInfo.Fields.FirstOrDefault(x => x.Name == columnName)
-               ?? throw new CqlException($"{columnName} column not found");
+               ?? throw CqlErrors.ColumnNotFound(columnName);
+    }
+
+    public int ResolveFieldIndex(RelationFieldInfo field)
+    {
+        var index = Array.IndexOf(RelationInfo.Fields, field);
+
+        if (index < 0)
+            throw CqlErrors.ColumnNotFound(field.Name);
+
+        return index;
     }
 }

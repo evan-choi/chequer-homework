@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime.Tree;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Common;
+using CSVQueryLanguage.Tree;
 using CSVQueryLanguage.Utilities;
 using static CSVQueryLanguage.Parser.CqlBaseParser;
 
@@ -18,7 +19,7 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
 
     public INode VisitNullLiteral(NullLiteralContext context)
     {
-        return new NullLiteral();
+        return NullLiteral.Default;
     }
 
     public INode VisitParenthesizedValueExpression(ParenthesizedValueExpressionContext context)
@@ -31,7 +32,7 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
         var text = context.GetText();
         text = IdentifierUtility.UnescapeSingleQuotes(text);
 
-        return new StringLiteral(text);
+        return new TextLiteral(text);
     }
 
     public INode VisitFunctionCall(FunctionCallContext context)
@@ -42,12 +43,12 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
     public INode VisitBooleanLiteral(BooleanLiteralContext context)
     {
         var value = context.booleanValue().start.Type == CqlBaseLexer.TRUE;
-        return new BooleanLiteral(value);
+        return value ? BooleanLiteral.True : BooleanLiteral.False;
     }
 
     public INode VisitNumberLiteral(NumberLiteralContext context)
     {
-        var value = long.Parse(context.GetText());
+        var value = double.Parse(context.GetText());
         return new NumberLiteral(value);
     }
 
@@ -55,7 +56,7 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
     {
         var left = (IExpression)VisitValueExpression(context.l);
         var right = (IExpression)VisitValueExpression(context.r);
-        return new Function(CqlFunctions.Concat, left, right);
+        return new Function(BuiltInFunctions.Concat, left, right);
     }
 
     public INode VisitArithmeticBinary(ArithmeticBinaryContext context)
@@ -189,29 +190,29 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
 
     public INode VisitCurrentTime(CurrentTimeContext context)
     {
-        return new Function(CqlFunctions.CurrentTime);
+        return new Function(BuiltInFunctions.CurrentTime);
     }
 
     public INode VisitCast(CastContext context)
     {
         var value = (IExpression)VisitExpression(context.expression());
         var type = (IExpression)VisitType(context.type());
-        return new Function(CqlFunctions.Cast, value, type);
+        return new Function(BuiltInFunctions.Cast, value, type);
     }
 
     public INode VisitCount(CountContext context)
     {
-        return new Function(CqlFunctions.Count);
+        return new Function(BuiltInFunctions.Count);
     }
 
     public INode VisitCurrentDate(CurrentDateContext context)
     {
-        return new Function(CqlFunctions.CurrentDate);
+        return new Function(BuiltInFunctions.CurrentDate);
     }
 
     public INode VisitRowNumber(RowNumberContext context)
     {
-        return new Function(CqlFunctions.RowNumber);
+        return new Function(BuiltInFunctions.RowNumber);
     }
 
     public INode VisitSubstring(SubstringContext context)
@@ -221,7 +222,7 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
             .Cast<IExpression>()
             .ToArray();
 
-        return new Function(CqlFunctions.Substring, arguments);
+        return new Function(BuiltInFunctions.Substring, arguments);
     }
 
     public INode VisitSelectStatement(SelectStatementContext context)
@@ -330,11 +331,13 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
     public INode VisitLimitClause(LimitClauseContext context)
     {
         long? offset = null;
+        long? count = null;
 
         if (context.offset is not null)
             offset = long.Parse(context.offset.Text);
 
-        var count = long.Parse(context.count.Text);
+        if (context.count is not null)
+            count = long.Parse(context.count.Text);
 
         return new Limit(offset, count);
     }

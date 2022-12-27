@@ -1,14 +1,15 @@
-using System.Collections.Generic;
-using System.Linq;
-
-namespace CSVQueryLanguage.Plan.Nodes;
+﻿namespace CSVQueryLanguage.Plan.Nodes;
 
 public abstract class PlanNode
 {
-    public IEnumerable<PlanNode> Children => GetChildren();
+    public PlanNode Source { get; }
 
-    protected virtual IEnumerable<PlanNode> GetChildren()
+    protected PlanNode()
     {
-        return Enumerable.Empty<PlanNode>();
+    }
+
+    protected PlanNode(PlanNode source)
+    {
+        Source = source;
     }
 }

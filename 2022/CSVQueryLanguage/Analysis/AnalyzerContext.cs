@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using CSVQueryLanguage.Parser.Tree;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Analysis;
 
@@ -9,7 +9,7 @@ public sealed class AnalyzerContext
 
     public Dictionary<INode, QueryScope> Scopes { get; } = new();
 
-    private Dictionary<IExpression, DataType> ExpressionTypes { get; } = new();
+    public ExpressionTypes ExpressionTypes { get; } = new();
 
     public AnalyzerContext(IStatement statement)
     {

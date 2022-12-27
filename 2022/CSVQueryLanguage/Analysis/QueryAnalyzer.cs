@@ -1,50 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using CSVQueryLanguage.Parser.Tree;
-using Sylvan.Data.Csv;
+using CSVQueryLanguage.Driver.Cursors;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Analysis;
 
 internal sealed class QueryAnalyzer
 {
-    public QueryScope AnalyzeQuery(Query query, AnalyzerContext context)
+    private readonly AnalyzerContext _context;
+    private readonly ExpressionAnalyzer _expressionAnalyzer;
+
+    public QueryAnalyzer(AnalyzerContext context)
+    {
+        _context = context;
+        _expressionAnalyzer = new ExpressionAnalyzer(context);
+    }
+
+    public QueryScope AnalyzeQuery(Query query)
     {
         QueryScope scope = null;
 
         if (query.From is not null)
-            scope = AnalyzeAliasedRelation(query.From, context);
+            scope = AnalyzeAliasedRelation(query.From);
 
-        RelationFieldInfo[] outputFields = AnalyzeSelect(query.Select, context, scope);
-        var outputRelation = new RelationInfo(query, null, outputFields);
+        RelationFieldInfo[] fields = AnalyzeSelect(query.Select, scope);
+        var info = new RelationInfo(query, null, fields);
+        IExpression filter = null;
 
-        // TODO: query.Where
+        if (query.Where is not null)
+            filter = _expressionAnalyzer.Analyze(query.Where, scope);
 
-        scope = new QueryScope(context, scope, outputRelation);
-        context.Scopes[query] = scope;
+        scope = new QueryScope(_context, scope, info, filter);
+        _context.Scopes[query] = scope;
 
         return scope;
     }
 
-    private QueryScope AnalyzeRelation(IRelation relation, AnalyzerContext context)
+    private QueryScope AnalyzeRelation(IRelation relation)
     {
         var scope = relation switch
         {
-            AliasedRelation aliasedRelation => AnalyzeAliasedRelation(aliasedRelation, context),
-            CsvRelation csvRelation => AnalyzeCsvRelation(csvRelation, context),
-            SubqueryRelation subqueryRelation => AnalyzeSubqueryRelation(subqueryRelation, context),
+            AliasedRelation aliasedRelation => AnalyzeAliasedRelation(aliasedRelation),
+            CsvRelation csvRelation => AnalyzeCsvRelation(csvRelation),
+            SubqueryRelation subqueryRelation => AnalyzeSubqueryRelation(subqueryRelation),
             _ => throw new ArgumentOutOfRangeException(nameof(relation))
         };
 
-        context.Scopes[relation] = scope;
+        _context.Scopes[relation] = scope;
 
         return scope;
     }
 
-    private QueryScope AnalyzeAliasedRelation(AliasedRelation aliasedRelation, AnalyzerContext context)
+    private QueryScope AnalyzeAliasedRelation(AliasedRelation aliasedRelation)
     {
-        var scope = AnalyzeRelation(aliasedRelation.Relation, context);
+        var scope = AnalyzeRelation(aliasedRelation.Relation);
 
         if (aliasedRelation.Alias is null)
             return scope;
@@ -55,66 +65,72 @@ internal sealed class QueryAnalyzer
             scope.RelationInfo.Fields
         );
 
-        return new QueryScope(context, scope.Parent, aliasedRelationInfo);
+        return new QueryScope(scope.Context, scope.Parent, aliasedRelationInfo, scope.Filter);
     }
 
-    private QueryScope AnalyzeCsvRelation(CsvRelation csvRelation, AnalyzerContext context)
+    private QueryScope AnalyzeCsvRelation(CsvRelation csvRelation)
     {
         var csvFileName = csvRelation.FileName.Value;
-        StreamReader csvStreamReader;
 
-        try
-        {
-            csvStreamReader = File.OpenText(csvFileName);
-        }
-        catch (FileNotFoundException)
-        {
-            throw new CqlException($"{csvFileName} not found");
-        }
+        using var csv = CsvCursor.OpenRead(csvFileName);
 
-        using var csvReader = CsvDataReader.Create(csvStreamReader);
-
-        var relationFields = new RelationFieldInfo[csvReader.FieldCount];
+        var relationFields = new RelationFieldInfo[csv.FieldCount];
         var relationInfo = new RelationInfo(csvRelation, csvFileName, relationFields);
 
         for (int i = 0; i < relationFields.Length; i++)
         {
-            var fieldName = csvReader.GetName(i);
-            relationFields[i] = new RelationFieldInfo(new FieldReference(i), fieldName);
+            var fieldName = csv.GetName(i);
+            relationFields[i] = new RelationFieldInfo(new FieldReference(i), DataType.Text, fieldName);
         }
 
-        return new QueryScope(context, null, relationInfo);
+        return new QueryScope(_context, null, relationInfo, null);
     }
 
-    private QueryScope AnalyzeSubqueryRelation(SubqueryRelation subqueryRelation, AnalyzerContext context)
+    private QueryScope AnalyzeSubqueryRelation(SubqueryRelation subqueryRelation)
     {
-        return AnalyzeQuery(subqueryRelation.Query, context);
+        return AnalyzeQuery(subqueryRelation.Query);
     }
 
-    private RelationFieldInfo[] AnalyzeSelect(Select select, AnalyzerContext context, [AllowNull] QueryScope scope)
+    private RelationFieldInfo[] AnalyzeSelect(Select select, [AllowNull] QueryScope scope)
     {
         var relationFields = new List<RelationFieldInfo>(select.Items.Count);
+        var fieldNameResolver = new FieldNameResolver();
+
+        if (scope is not null)
+            fieldNameResolver.Add(scope);
 
         foreach (var selectItem in select.Items)
-            relationFields.AddRange(AnalyzeSelectItem(selectItem, context, scope));
+        {
+            switch (selectItem)
+            {
+                case AllColumns allColumns:
+                    foreach (var field in AnalyzeAllColumns(allColumns, scope))
+                    {
+                        fieldNameResolver.Add(field.Name);
+                        relationFields.Add(field);
+                    }
+
+                    break;
+
+                case SingleColumn singleColumn:
+                    (var expression, DataType? type, var name) = AnalyzeSingleColumn(singleColumn, scope);
+                    name ??= fieldNameResolver.GenerateColumnName();
+
+                    relationFields.Add(new RelationFieldInfo(expression, type, name));
+                    break;
+
+                default:
+                    throw new NotSupportedException(selectItem.GetType().Name);
+            }
+        }
 
         return relationFields.ToArray();
     }
 
-    private IEnumerable<RelationFieldInfo> AnalyzeSelectItem(ISelectItem selectItem, AnalyzerContext context, [AllowNull] QueryScope scope)
+    private IEnumerable<RelationFieldInfo> AnalyzeAllColumns(AllColumns allColumns, [AllowNull] QueryScope scope)
     {
-        return selectItem switch
-        {
-            AllColumns allColumns => AnalyzeAllColumns(allColumns, context, scope),
-            SingleColumn singleColumn => new[] { AnalyzeSingleColumn(singleColumn, context, scope) },
-            _ => throw new ArgumentOutOfRangeException(nameof(selectItem))
-        };
-    }
-
-    private IEnumerable<RelationFieldInfo> AnalyzeAllColumns(AllColumns allColumns, AnalyzerContext context, [AllowNull] QueryScope scope)
-    {
-        if (scope?.RelationInfo is null)
-            throw new CqlException("No table");
+        if (scope is null)
+            throw CqlErrors.RelationNotFound();
 
         var relationInfo = scope.RelationInfo;
 
@@ -124,14 +140,14 @@ internal sealed class QueryAnalyzer
         for (int i = 0; i < relationInfo.Fields.Length; i++)
         {
             var field = relationInfo.Fields[i];
-            yield return new RelationFieldInfo(new FieldReference(i), field.Name);
+            yield return new RelationFieldInfo(new FieldReference(i), field.Type, field.Name);
         }
     }
 
-    private RelationFieldInfo AnalyzeSingleColumn(SingleColumn singleColumn, AnalyzerContext context, [AllowNull] QueryScope scope)
+    private (IExpression Expression, DataType? Type, string Name) AnalyzeSingleColumn(SingleColumn singleColumn, [AllowNull] QueryScope scope)
     {
         var expression = singleColumn.Expression;
-        string name = singleColumn.Alias?.Value;
+        var name = singleColumn.Alias?.Value;
 
         if (expression is ColumnReference colRef)
         {
@@ -139,11 +155,44 @@ internal sealed class QueryAnalyzer
                 throw new CqlException("No table");
 
             var field = scope.ResolveField(colRef.Name);
-            var fieldIndex = Array.IndexOf(scope.RelationInfo.Fields, field);
+            var fieldIndex = scope.ResolveFieldIndex(field);
 
-            return new RelationFieldInfo(new FieldReference(fieldIndex), name ?? field.Name);
+            return (new FieldReference(fieldIndex), field.Type, name ?? field.Name);
         }
 
-        return new RelationFieldInfo(expression, name);
+        // Analyze & Rewrite
+        expression = _expressionAnalyzer.Analyze(expression, scope);
+        DataType? type = _context.ExpressionTypes[expression];
+
+        return (expression, type, name);
+    }
+
+    private sealed class FieldNameResolver
+    {
+        private readonly HashSet<string> _names = new();
+        private int _colIndex;
+
+        public void Add(QueryScope scope)
+        {
+            foreach (var field in scope.RelationInfo.Fields)
+                _names.Add(field.Name);
+        }
+
+        public void Add(string name)
+        {
+            _names.Add(name);
+        }
+
+        public string GenerateColumnName()
+        {
+            while (_names.Contains($"_col{_colIndex}"))
+                _colIndex++;
+
+            var name = $"_col{_colIndex++}";
+
+            _names.Add(name);
+
+            return name;
+        }
     }
 }
