@@ -24,6 +24,8 @@ public interface INodeVisitor<out TResult>
 
     TResult VisitFunction(Function node);
 
+    TResult VisitFunctionCall(FunctionCall node);
+
     TResult VisitFieldReference(FieldReference node);
 
     TResult VisitIdentifier(Identifier node);

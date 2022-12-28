@@ -210,11 +210,6 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
         return new Function(BuiltInFunctions.CurrentDate);
     }
 
-    public INode VisitRowNumber(RowNumberContext context)
-    {
-        return new Function(BuiltInFunctions.RowNumber);
-    }
-
     public INode VisitSubstring(SubstringContext context)
     {
         IExpression[] arguments = context.valueExpression()
@@ -425,7 +420,6 @@ internal sealed class TreeBuilder : AbstractParseTreeVisitor<INode>, ICqlBaseVis
     {
         return context switch
         {
-            RowNumberContext ctx => VisitRowNumber(ctx),
             CountContext ctx => VisitCount(ctx),
             CurrentDateContext ctx => VisitCurrentDate(ctx),
             CurrentTimeContext ctx => VisitCurrentTime(ctx),

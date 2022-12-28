@@ -1,15 +1,26 @@
-﻿using CSVQueryLanguage.Driver.Interpretation;
+﻿using System.Collections.Generic;
+using System.Linq;
+using CSVQueryLanguage.Analysis;
+using CSVQueryLanguage.Driver.Interpretation;
 
 namespace CSVQueryLanguage.Driver;
 
 public sealed class ExecutionContext
 {
-    // TODO: aggregate variables
+    public AnalyzerContext AnalyzerContext { get; }
 
     public Interactive Interactive { get; }
 
-    public ExecutionContext()
+    public Dictionary<string, RuntimeVariable> Variables { get; }
+
+    public ExecutionContext(AnalyzerContext analyzerContext)
     {
+        AnalyzerContext = analyzerContext;
         Interactive = new Interactive(this);
+
+        Variables = analyzerContext.Variables.ToDictionary(
+            x => x.Key,
+            x => new RuntimeVariable(x.Value)
+        );
     }
 }

@@ -214,7 +214,6 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
                 node.Arguments[1].Accept(this);
                 break;
 
-            case BuiltInFunctions.RowNumber:
             case BuiltInFunctions.CurrentDate:
             case BuiltInFunctions.CurrentTime:
                 _builder.Append(node.Name).Append("()");
@@ -251,6 +250,11 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
         }
 
         return null;
+    }
+
+    public object VisitFunctionCall(FunctionCall node)
+    {
+        return VisitFunction(new Function(node.Name, node.Arguments));
     }
 
     public object VisitFieldReference(FieldReference node)

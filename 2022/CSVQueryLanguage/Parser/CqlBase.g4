@@ -102,8 +102,7 @@ booleanValue
     ;
 
 function
-    : ROW_NUMBER ('(' ')')?               #rowNumber
-    | COUNT '(' ('*' | qualifiedName) ')' #count
+    : COUNT '(' ('*' | qualifiedName) ')' #count
     | CURRENT_DATE ('(' ')')?             #currentDate
     | CURRENT_TIME ('(' ')')?             #currentTime
     | SUBSTRING '(' 

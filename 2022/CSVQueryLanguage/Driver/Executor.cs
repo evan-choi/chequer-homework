@@ -16,7 +16,7 @@ public sealed class Executor
 
     public ICursor Execute(PlanNode plan)
     {
-        return BuildPlan(plan, new ExecutionContext());
+        return BuildPlan(plan, new ExecutionContext(_analyzerContext));
     }
 
     private ICursor BuildPlan(PlanNode plan, ExecutionContext context)
@@ -58,7 +58,7 @@ public sealed class Executor
 
     private ICursor BuildAggregateNode(AggregateNode plan, ICursor sourceCursor, ExecutionContext context)
     {
-        throw new NotImplementedException();
+        return new AggregateCursor(sourceCursor, context, plan);
     }
 
     private ICursor BuildFilterNode(FilterNode plan, ICursor sourceCursor, ExecutionContext context)

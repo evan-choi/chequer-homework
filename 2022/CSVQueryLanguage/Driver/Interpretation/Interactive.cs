@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using CSVQueryLanguage.Driver.Cursors;
 using CSVQueryLanguage.Tree;
 
@@ -37,10 +38,25 @@ file readonly struct Interpreter : IExpressionVisitor<object>
 
     public object VisitArithmeticBinaryExpression(ArithmeticBinaryExpression node)
     {
-        var left = (double)node.Left.Accept(this);
-        var right = (double)node.Right.Accept(this);
+        var left = node.Left.Accept(this);
+        var right = node.Right.Accept(this);
 
-        return AtomicInteractive.Interpret(node.Operator, left, right);
+        switch ((left, right))
+        {
+            case (double l, double r):
+                return AtomicInteractive.Interpret(node.Operator, l, r);
+
+            case (TimeOnly l, TimeOnly r):
+                return AtomicInteractive.Interpret(node.Operator, l, r);
+
+            case (DateTimeOffset l, DateOnly r):
+                return AtomicInteractive.Interpret(node.Operator, l, r);
+
+            case (DateTimeOffset l, TimeOnly r):
+                return AtomicInteractive.Interpret(node.Operator, l, r);
+        }
+
+        throw new InvalidOperationException();
     }
 
     public object VisitArithmeticUnaryExpression(ArithmeticUnaryExpression node)
@@ -65,7 +81,17 @@ file readonly struct Interpreter : IExpressionVisitor<object>
 
     public object VisitFunction(Function node)
     {
-        throw new NotImplementedException();
+        throw new InvalidOperationException();
+    }
+
+    public object VisitFunctionCall(FunctionCall node)
+    {
+        var arguments = new object[node.Arguments.Length];
+
+        for (int i = 0; i < arguments.Length; i++)
+            arguments[i] = node.Arguments[i].Accept(this);
+
+        return node.Target.Invoke(arguments);
     }
 
     public object VisitFieldReference(FieldReference node)
@@ -114,7 +140,7 @@ file readonly struct Interpreter : IExpressionVisitor<object>
 
     public object VisitVariableReference(VariableReference node)
     {
-        throw new NotImplementedException();
+        return _context.Variables[node.Name].Value;
     }
 
     public object VisitDateLiteral(DateLiteral node)

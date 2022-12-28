@@ -103,6 +103,17 @@ public abstract class DefaultNodeVisitor<TResult> : INodeVisitor<TResult>
         return default;
     }
 
+    public virtual TResult VisitFunctionCall(FunctionCall node)
+    {
+        CurrentDepth++;
+
+        foreach (var argument in node.Arguments)
+            argument.Accept(this);
+
+        CurrentDepth--;
+        return default;
+    }
+
     public virtual TResult VisitFieldReference(FieldReference node)
     {
         return default;

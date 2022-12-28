@@ -1,8 +1,15 @@
-﻿namespace CSVQueryLanguage.Plan.Nodes;
+﻿using System.Collections.Generic;
+using CSVQueryLanguage.Analysis;
+using CSVQueryLanguage.Tree;
+
+namespace CSVQueryLanguage.Plan.Nodes;
 
 public sealed class AggregateNode : PlanNode
 {
-    public AggregateNode(PlanNode source) : base(source)
+    public IReadOnlyDictionary<VariableInfo, IExpression> Variables { get; }
+
+    public AggregateNode(PlanNode source, IReadOnlyDictionary<VariableInfo, IExpression> variables) : base(source)
     {
+        Variables = variables;
     }
 }

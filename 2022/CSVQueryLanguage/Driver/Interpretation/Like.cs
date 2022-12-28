@@ -11,6 +11,7 @@ public sealed class Like
 
     public Like(string pattern, bool ignoreCase)
     {
+        pattern = Regex.Escape(pattern);
         pattern = pattern.Replace("%", ".*").Replace("_", ".");
         _pattern = new Regex(pattern, ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None);
     }

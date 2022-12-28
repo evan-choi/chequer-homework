@@ -1,5 +1,6 @@
 ﻿using System;
 using CSVQueryLanguage.Common;
+using CSVQueryLanguage.Common.Functions;
 using CSVQueryLanguage.Driver.Interpretation;
 using CSVQueryLanguage.Tree;
 
@@ -148,55 +149,70 @@ file sealed class ExpressionRewriter : IExpressionVisitor<IExpression>
 
     public IExpression VisitFunction(Function node)
     {
-        var rewrite = false;
         var arguments = new IExpression[node.Arguments.Length];
 
         for (int i = 0; i < arguments.Length; i++)
-        {
             arguments[i] = node.Arguments[i].Accept(this);
-            rewrite |= node.Arguments[i] != arguments[i];
-        }
 
         DataType? type;
+        IFunction function;
 
         switch (node.Name)
         {
+            case BuiltInFunctions.Count:
+                var variableInfo = _context.DelcareAnonymousVariable(DataType.Number, node);
+
+                // declare variable
+                var variableNode = new VariableReference(variableInfo.Name);
+                _context.ExpressionTypes[variableNode] = DataType.Number;
+
+                // variable + 1
+                var resultNode = new FunctionCall(node.Name, new CountFunction(), new IExpression[] { variableNode });
+                _context.ExpressionTypes[resultNode] = DataType.Number;
+
+                _scope.AggregateVariables[variableInfo] = resultNode;
+
+                return variableNode;
+
             case BuiltInFunctions.Concat:
                 type = DataType.Text;
+                function = new ConcatFunction();
                 break;
-
-            // TODO: Add aggregate variable to QueryScope and rewrite to VariableReference
-            case BuiltInFunctions.RowNumber:
-            case BuiltInFunctions.Count:
-                throw new NotImplementedException();
 
             case BuiltInFunctions.CurrentDate:
                 type = DataType.Date;
+                function = new CurrentDateFunction();
                 break;
 
             case BuiltInFunctions.CurrentTime:
                 type = DataType.Time;
+                function = new CurrentTimeFunction();
                 break;
 
             case BuiltInFunctions.Substring:
                 type = DataType.Text;
+                function = new SubstringFunction();
                 break;
 
             case BuiltInFunctions.Cast:
                 var typeNode = (DataTypeExpression)arguments[1];
+                arguments = new[] { arguments[0] };
                 type = typeNode.Type;
+                function = new CastFunction(typeNode.Type);
                 break;
 
             default:
                 throw CqlErrors.UnknownFunction(node.Name);
         }
 
-        // rewrite
-        if (rewrite)
-            node = new Function(node.Name, arguments);
+        var callNode = new FunctionCall(node.Name, function, arguments);
+        _context.ExpressionTypes[callNode] = type;
 
-        _context.ExpressionTypes[node] = type;
+        return callNode;
+    }
 
+    public IExpression VisitFunctionCall(FunctionCall node)
+    {
         return node;
     }
 
@@ -211,7 +227,7 @@ file sealed class ExpressionRewriter : IExpressionVisitor<IExpression>
     public IExpression VisitLikePredicate(LikePredicate node)
     {
         var value = node.Value.Accept(this);
-        var pattern = node.Value.Accept(this);
+        var pattern = node.Pattern.Accept(this);
 
         DataType? valueType = _context.ExpressionTypes[value];
         DataType? patternType = _context.ExpressionTypes[pattern];
@@ -313,7 +329,7 @@ file sealed class ExpressionRewriter : IExpressionVisitor<IExpression>
 
     public IExpression VisitVariableReference(VariableReference node)
     {
-        throw new NotImplementedException();
+        return node;
     }
 
     public IExpression VisitDateLiteral(DateLiteral node)

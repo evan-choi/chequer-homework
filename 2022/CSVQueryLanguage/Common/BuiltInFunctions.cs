@@ -2,9 +2,10 @@ namespace CSVQueryLanguage.Common;
 
 internal static class BuiltInFunctions
 {
-    public const string Concat = "CONCAT";
-    public const string RowNumber = "ROW_NUMBER";
+    // Aggregate
     public const string Count = "COUNT";
+
+    public const string Concat = "CONCAT";
     public const string CurrentDate = "CURRENT_DATE";
     public const string CurrentTime = "CURRENT_TIME";
     public const string Substring = "SUBSTRING";

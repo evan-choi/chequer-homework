@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using CSVQueryLanguage.Tree;
@@ -14,6 +15,8 @@ public sealed class QueryScope
     public RelationInfo RelationInfo { get; }
 
     public IExpression Filter { get; }
+
+    public Dictionary<VariableInfo, IExpression> AggregateVariables { get; } = new();
 
     public QueryScope(
         AnalyzerContext context,

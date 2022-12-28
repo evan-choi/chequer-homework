@@ -21,7 +21,12 @@ public sealed class QueryPlanner
         PlanNode plan = null;
 
         if (query.From is not null)
+        {
             plan = PlanRelation(query.From);
+
+            var fromScope = _context.Scopes[query.From.Relation];
+            plan = PlanAggregate(fromScope, plan);
+        }
 
         var scope = _context.Scopes[query];
 
@@ -30,6 +35,14 @@ public sealed class QueryPlanner
         plan = PlanSelect(query.Select, scope, plan);
 
         return plan;
+    }
+
+    private PlanNode PlanAggregate(QueryScope scope, PlanNode plan)
+    {
+        if (scope.AggregateVariables.Count == 0)
+            return plan;
+
+        return new AggregateNode(plan, scope.AggregateVariables);
     }
 
     private PlanNode PlanWhere(IExpression where, PlanNode source)
