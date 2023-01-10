@@ -424,7 +424,7 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
 
     public object VisitVariableReference(VariableReference node)
     {
-        _builder.Append("__val$").Append(node.Name);
+        _builder.Append(node.Name).Append("(variable)");
         return null;
     }
 

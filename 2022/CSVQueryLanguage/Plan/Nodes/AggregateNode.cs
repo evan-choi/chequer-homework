@@ -1,15 +1,13 @@
-﻿using System.Collections.Generic;
-using CSVQueryLanguage.Analysis;
-using CSVQueryLanguage.Tree;
+﻿using CSVQueryLanguage.Analysis;
 
 namespace CSVQueryLanguage.Plan.Nodes;
 
 public sealed class AggregateNode : PlanNode
 {
-    public IReadOnlyDictionary<VariableInfo, IExpression> Variables { get; }
+    public VariableInfo CountVariable { get; }
 
-    public AggregateNode(PlanNode source, IReadOnlyDictionary<VariableInfo, IExpression> variables) : base(source)
+    public AggregateNode(PlanNode source, VariableInfo countVariable) : base(source)
     {
-        Variables = variables;
+        CountVariable = countVariable;
     }
 }

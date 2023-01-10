@@ -61,6 +61,9 @@ public static class PlanPrinter
             case ProjectNode node:
                 return GetProjectNodeProperties(node);
 
+            case AggregateNode node:
+                return GetAggregateNodeProperties(node);
+
             default:
                 throw new ArgumentOutOfRangeException(nameof(plan));
         }
@@ -107,5 +110,13 @@ public static class PlanPrinter
                 x => $"{x.First}({(x.Second.HasValue ? CqlDeparser.Deparse(x.Second.Value) : "NULL")})",
                 x => CqlDeparser.Deparse(x.Third)
             );
+    }
+
+    private static Properties GetAggregateNodeProperties(AggregateNode node)
+    {
+        return new Properties
+        {
+            ["count"] = node.CountVariable.Name
+        };
     }
 }

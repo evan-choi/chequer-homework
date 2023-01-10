@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using CSVQueryLanguage.Common;
 using CSVQueryLanguage.Common.Functions;
 using CSVQueryLanguage.Driver.Interpretation;
@@ -160,17 +161,16 @@ file sealed class ExpressionRewriter : IExpressionVisitor<IExpression>
         switch (node.Name)
         {
             case BuiltInFunctions.Count:
-                var variableInfo = _context.DelcareAnonymousVariable(DataType.Number, node);
+                var variableInfo = _scope.CountVariable;
 
-                // declare variable
+                if (variableInfo is null)
+                {
+                    variableInfo = _context.DelcareAnonymousVariable(name => new VariableInfo(node, name, DataType.Number));
+                    _scope.CountVariable = variableInfo;
+                }
+
                 var variableNode = new VariableReference(variableInfo.Name);
                 _context.ExpressionTypes[variableNode] = DataType.Number;
-
-                // variable + 1
-                var resultNode = new FunctionCall(node.Name, new CountFunction(), new IExpression[] { variableNode });
-                _context.ExpressionTypes[resultNode] = DataType.Number;
-
-                _scope.AggregateVariables[variableInfo] = resultNode;
 
                 return variableNode;
 

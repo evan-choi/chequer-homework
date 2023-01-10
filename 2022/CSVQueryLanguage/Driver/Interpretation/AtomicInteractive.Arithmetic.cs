@@ -5,6 +5,16 @@ namespace CSVQueryLanguage.Driver.Interpretation;
 
 public static partial class AtomicInteractive
 {
+    // <text> + <text>
+    private static readonly Func<string, string, string>[] _textArithmeticOperators =
+    {
+        static (l, r) => l + r,
+        static (_, _) => throw CqlErrors.NotSupportedBinaryOperator(ArithmeticOperator.Subtract, DataType.Text, DataType.Text),
+        static (_, _) => throw CqlErrors.NotSupportedBinaryOperator(ArithmeticOperator.Multiply, DataType.Text, DataType.Text),
+        static (_, _) => throw CqlErrors.NotSupportedBinaryOperator(ArithmeticOperator.Divide, DataType.Text, DataType.Text),
+        static (_, _) => throw CqlErrors.NotSupportedBinaryOperator(ArithmeticOperator.Modulus, DataType.Text, DataType.Text),
+    };
+
     // <number> [+-*/%] <number>
     private static readonly Func<double, double, double>[] _numberArithmeticOperators =
     {
@@ -49,6 +59,9 @@ public static partial class AtomicInteractive
     {
         switch ((left, right))
         {
+            case (DataType.Text, DataType.Text):
+                return op is ArithmeticOperator.Add;
+
             case (DataType.Number, DataType.Number):
             case (DataType.Time, DataType.Time):
                 return true;
@@ -63,6 +76,11 @@ public static partial class AtomicInteractive
     public static bool CanInterpret(ArithmeticSign sign, DataType? value)
     {
         return value is DataType.Number;
+    }
+
+    public static string Interpret(ArithmeticOperator op, string left, string right)
+    {
+        return _textArithmeticOperators[(int)op](left, right);
     }
 
     public static double Interpret(ArithmeticOperator op, double left, double right)

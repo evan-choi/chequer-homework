@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using CSVQueryLanguage.Analysis;
 using CSVQueryLanguage.Driver.Interpretation;
+using CSVQueryLanguage.Tree;
 
 namespace CSVQueryLanguage.Driver;
 
@@ -11,7 +13,7 @@ public sealed class ExecutionContext
 
     public Interactive Interactive { get; }
 
-    public Dictionary<string, RuntimeVariable> Variables { get; }
+    public Dictionary<string, IRuntimeVariable> Variables { get; }
 
     public ExecutionContext(AnalyzerContext analyzerContext)
     {
@@ -20,7 +22,21 @@ public sealed class ExecutionContext
 
         Variables = analyzerContext.Variables.ToDictionary(
             x => x.Key,
-            x => new RuntimeVariable(x.Value)
+            x => CreateRuntimeVariable(x.Value)
         );
+    }
+
+    private IRuntimeVariable CreateRuntimeVariable(VariableInfo info)
+    {
+        return info.Type switch
+        {
+            DataType.Text => new RuntimeVariable<string>(info),
+            DataType.Number => new RuntimeVariable<double>(info),
+            DataType.Date => new RuntimeVariable<DateOnly>(info),
+            DataType.Time => new RuntimeVariable<TimeOnly>(info),
+            DataType.Timestamp => new RuntimeVariable<DateTimeOffset>(info),
+            DataType.Boolean => new RuntimeVariable<bool>(info),
+            _ => throw new ArgumentOutOfRangeException()
+        };
     }
 }

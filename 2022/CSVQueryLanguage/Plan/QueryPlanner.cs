@@ -39,10 +39,10 @@ public sealed class QueryPlanner
 
     private PlanNode PlanAggregate(QueryScope scope, PlanNode plan)
     {
-        if (scope.AggregateVariables.Count == 0)
+        if (scope.CountVariable is null)
             return plan;
 
-        return new AggregateNode(plan, scope.AggregateVariables);
+        return new AggregateNode(plan, scope.CountVariable);
     }
 
     private PlanNode PlanWhere(IExpression where, PlanNode source)

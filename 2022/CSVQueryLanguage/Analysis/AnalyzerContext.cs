@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using CSVQueryLanguage.Tree;
 
@@ -18,16 +19,16 @@ public sealed class AnalyzerContext
         Statement = statement;
     }
 
-    public VariableInfo DelcareAnonymousVariable(DataType type, INode source)
+    public VariableInfo DelcareAnonymousVariable(Func<string, VariableInfo> factory)
     {
         for (int i = 0;; i++)
         {
-            var name = $"${i}";
+            var name = $"__val${i}";
 
             if (Variables.ContainsKey(name))
                 continue;
 
-            var variable = new VariableInfo(source, name, type);
+            var variable = factory(name);
             Variables[name] = variable;
 
             return variable;

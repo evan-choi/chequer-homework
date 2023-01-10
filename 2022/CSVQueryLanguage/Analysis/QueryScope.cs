@@ -16,7 +16,9 @@ public sealed class QueryScope
 
     public IExpression Filter { get; }
 
-    public Dictionary<VariableInfo, IExpression> AggregateVariables { get; } = new();
+    public VariableInfo CountVariable { get; set; }
+
+    public Dictionary<VariableInfo, IExpression> Variables { get; } = new();
 
     public QueryScope(
         AnalyzerContext context,

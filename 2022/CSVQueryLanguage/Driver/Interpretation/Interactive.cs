@@ -46,6 +46,9 @@ file readonly struct Interpreter : IExpressionVisitor<object>
             case (double l, double r):
                 return AtomicInteractive.Interpret(node.Operator, l, r);
 
+            case (string l, string r):
+                return AtomicInteractive.Interpret(node.Operator, l, r);
+
             case (TimeOnly l, TimeOnly r):
                 return AtomicInteractive.Interpret(node.Operator, l, r);
 

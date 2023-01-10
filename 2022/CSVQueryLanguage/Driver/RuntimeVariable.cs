@@ -2,15 +2,15 @@
 
 namespace CSVQueryLanguage.Driver;
 
-public sealed class RuntimeVariable
+public sealed class RuntimeVariable<T> : IRuntimeVariable<T>
 {
     public VariableInfo Info { get; }
 
-    public object Value { get; set; }
+    public T Value { get; set; }
 
     public RuntimeVariable(VariableInfo info)
     {
         Info = info;
-        Value = info.Default;
+        Value = default;
     }
 }

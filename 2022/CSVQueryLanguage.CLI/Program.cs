@@ -26,23 +26,24 @@ internal static class Program
                 var sw = Stopwatch.StartNew();
                 var statement = parser.Parse(sql);
 
-                // Console.WriteLine("==== Tree ====");
-                // NodePrinter.Print(statement, Console.Out, 2);
-                // Console.WriteLine();
-                //
-                // Console.WriteLine("==== Analyzer ====");
+                Console.WriteLine("==== Tree ====");
+                NodePrinter.Print(statement, Console.Out, 2);
+                Console.WriteLine();
+
+                Console.WriteLine("==== Analyzer ====");
                 var analyzer = new Analyzer();
                 var scope = analyzer.AnalyzeStatement(statement);
-                // QueryScopePrinter.Print(scope, Console.Out, 2);
-                // Console.WriteLine();
-                //
-                // Console.WriteLine("==== Plan ====");
+                QueryScopePrinter.Print(scope, Console.Out, 2);
+                Console.WriteLine();
+
+                Console.WriteLine("==== Plan ====");
                 var planner = new Planner(scope.Context);
                 var plan = planner.PlanStatement(statement);
-                // PlanPrinter.Print(plan, Console.Out, 2);
-                // Console.WriteLine();
+                PlanPrinter.Print(plan, Console.Out, 2);
+                Console.WriteLine();
 
-                // Console.WriteLine("==== Execute ====");
+                Console.WriteLine("==== Execute ====");
+                var limit = 10;
                 var executor = new Executor(scope.Context);
                 using var cursor = executor.Execute(plan);
 
@@ -53,7 +54,7 @@ internal static class Program
                 Console.WriteLine(cols);
                 Console.WriteLine(new string('-', cols.Length));
 
-                while (cursor.Read())
+                while (limit-- > 0 && cursor.Read())
                 {
                     for (int i = 0; i < cursor.FieldCount; i++)
                     {
@@ -66,9 +67,19 @@ internal static class Program
                     Console.WriteLine();
                 }
 
+                var remain = 0;
+
+                while (cursor.Read())
+                    remain++;
+
+                if (remain > 0)
+                    Console.WriteLine($"... more {remain} items");
+                
                 var fetchTime = sw.Elapsed;
 
+                Console.WriteLine();
                 Console.WriteLine($"execute: {executeTime.TotalMilliseconds:0.##} ms, fetch: {fetchTime.TotalMilliseconds:0.##} ms");
+                Console.WriteLine();
             }
             catch (CqlException e)
             {
