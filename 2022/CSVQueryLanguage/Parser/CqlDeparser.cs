@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using CSVQueryLanguage.Common;
+using CSVQueryLanguage.Common.Functions;
 using CSVQueryLanguage.Tree;
 using CSVQueryLanguage.Utilities;
 
@@ -254,6 +255,16 @@ file readonly struct CqlDeparserVisitor : INodeVisitor<object>
 
     public object VisitFunctionCall(FunctionCall node)
     {
+        if (node.Target is CastFunction castFunction)
+        {
+            _builder.Append("CAST(");
+            node.Arguments[0].Accept(this);
+            _builder.Append(" AS ");
+            _builder.Append(CqlDeparser.Deparse(castFunction.Type));
+            _builder.Append(')');
+            return null;
+        }
+
         return VisitFunction(new Function(node.Name, node.Arguments));
     }
 

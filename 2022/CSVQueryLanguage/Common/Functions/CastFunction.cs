@@ -5,11 +5,11 @@ namespace CSVQueryLanguage.Common.Functions;
 
 public readonly struct CastFunction : IFunction
 {
-    private readonly DataType _type;
+    public DataType Type { get; }
 
     public CastFunction(DataType type)
     {
-        _type = type;
+        Type = type;
     }
 
     public object Invoke(object[] arguments)
@@ -19,7 +19,7 @@ public readonly struct CastFunction : IFunction
         if (value is null)
             return null;
 
-        switch (_type)
+        switch (Type)
         {
             case DataType.Text:
                 if (value is string)
